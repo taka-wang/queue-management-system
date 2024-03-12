@@ -9,7 +9,9 @@ components:
   securitySchemes:
     jwtAuth:
       type: http
-      scheme: jwt
+      scheme: bearer
+      bearerFormat: JWT
+      description: "A JWT token is required to access this API..."
 tags:
   - name: 通用取號
   - name: 現場管理
