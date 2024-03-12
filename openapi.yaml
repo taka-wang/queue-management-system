@@ -9,7 +9,9 @@ components:
   securitySchemes:
     jwtAuth:
       type: http
-      scheme: jwt
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'A JWT token is required to access this API...'
 tags:
   - name: 通用取號
   - name: 現場管理
@@ -21,7 +23,7 @@ tags:
   - name: 店鋪管理
   - name: 桌型管理
   - name: 營業時間管理
-  - name: 統計信息
+  - name: 統計資訊
 paths:
   /v1/stores/reservations:
     get:
@@ -5417,7 +5419,7 @@ paths:
   /v1/stores/{store_id}/stats/hourly:
     get:
       tags:
-        - 統計信息
+        - 統計資訊
       summary: 查看每小時統計
       description: |-
         ### Description
@@ -5616,7 +5618,7 @@ paths:
   /v1/stores/{store_id}/stats/daily:
     get:
       tags:
-        - 統計信息
+        - 統計資訊
       summary: 查看每日統計
       description: |-
         ### Description
@@ -5755,7 +5757,7 @@ paths:
   /v1/stores/stats/hourly:
     get:
       tags:
-        - 統計信息
+        - 統計資訊
       summary: 查看所有分店每小時統計
       description: |-
         ### Description
@@ -5889,7 +5891,7 @@ paths:
   /v1/stores/stats/daily:
     get:
       tags:
-        - 統計信息
+        - 統計資訊
       summary: 查看所有分店每日統計
       description: |-
         ### Description
