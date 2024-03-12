@@ -1,0 +1,6042 @@
+openapi: 3.0.0
+info:
+  title: Queue Management System
+  description: 餐廳候位取號系統設計
+  version: 1.0.0
+servers:
+  - url: https://api.abc.com
+components:
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: jwt
+tags:
+  - name: 通用取號
+  - name: 現場管理
+  - name: 帳號管理
+  - name: 員工管理
+  - name: 角色權限管理
+  - name: 客戶資訊管理
+  - name: 黑名單管理
+  - name: 店鋪管理
+  - name: 桌型管理
+  - name: 營業時間管理
+  - name: 統計信息
+paths:
+  /v1/stores/reservations:
+    get:
+      tags:
+        - 通用取號
+      summary: 查看所有分店取號情況
+      description: |-
+        ### Description
+
+        用來取得所有分店的取號等待情況，用於客戶遠端取號。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `stores`: 包含所有分店的陣列，每個分店對象包含以下屬性：
+            - `store_id`: 分店的唯一標識符。
+            - `name`: 分店的名稱。
+            - `tables`: 包含該分店所有桌型的陣列，每個桌型對象包含以下屬性：
+                - `capacity`: 桌型的最大容納人數。
+                - `capacity_label`: 桌型的友善閱讀名稱。
+                - `current_number`: 目前取號號碼。
+                - `waiting_count`: 目前等待 `總人數`。
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 成功！
+                stores:
+                  - store_id: 1
+                    name: Branch A
+                    tables:
+                      - capacity: 2
+                        capacity_label: 1~2人
+                        current_number: 2002
+                        waiting_count: 3
+                      - capacity: 4
+                        capacity_label: 3~4人
+                        current_number: 4000
+                        waiting_count: 0
+                      - capacity: 8
+                        capacity_label: 5人以上
+                        current_number: 8001
+                        waiting_count: 2
+                  - store_id: 2
+                    name: Branch B
+                    tables:
+                      - capacity: 2
+                        capacity_label: 1~2人
+                        current_number: 3001
+                        waiting_count: 1
+                      - capacity: 4
+                        capacity_label: 3~4人
+                        current_number: 4500
+                        waiting_count: 2
+                      - capacity: 8
+                        capacity_label: 5人以上
+                        current_number: 7002
+                        waiting_count: 5
+                  - store_id: 3
+                    name: Branch C
+                    tables:
+                      - capacity: 2
+                        capacity_label: 1~2人
+                        current_number: 2100
+                        waiting_count: 2
+                      - capacity: 4
+                        capacity_label: 3~4人
+                        current_number: 4200
+                        waiting_count: 1
+                      - capacity: 8
+                        capacity_label: 5人以上
+                        current_number: 8501
+                        waiting_count: 0
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                error: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/reservations:
+    get:
+      tags:
+        - 通用取號
+      summary: 查看特定分店當前取號情況
+      description: |-
+        ### Description
+
+        用來取得特定分店的取號等待情況，供前台人員登入後的客戶自助取號使用。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Parameters
+
+        - `store_id` (required): 目標分店的唯一標識符。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `store_id`: 分店的唯一標識符。
+        - `name`: 分店的名稱。
+        - `tables`: 包含該分店所有桌型的陣列，每個桌型對象包含以下屬性：
+            - `capacity`: 桌型的最大容納人數。
+            - `capacity_label`: 桌型的友善閱讀名稱。
+            - `current_number`: 目前取號號碼。
+            - `waiting_count`: 目前等待人數。
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 成功！
+                store_id: 2
+                name: Branch B
+                tables:
+                  - capacity: 2
+                    capacity_label: 1~2人
+                    current_number: 3001
+                    waiting_count: 1
+                  - capacity: 4
+                    capacity_label: 3~4人
+                    current_number: 4500
+                    waiting_count: 2
+                  - capacity: 8
+                    capacity_label: 5人以上
+                    current_number: 7002
+                    waiting_count: 5
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    post:
+      tags:
+        - 通用取號
+      summary: 提交現場取號請求
+      description: >-
+        ### Description
+
+
+        該 API 用於特定分店，已有前台員工登入過的平板供客戶使用，提供客戶透過 kiosk
+        自動取號候位服務。客戶只需選擇桌型並填寫手機號碼即可完成預約。
+
+
+        ### Authentication
+
+
+        需要身份驗證。
+
+
+        ### Parameters
+
+
+        - `store_id` (required): 目標分店的唯一標識符。
+            
+
+        ### Request Body
+
+
+        - `phone_number` (required): 客戶的手機號碼。
+
+        - `capacity` (required): 選定的桌型容納人數。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                phone_number: '123456789'
+                store_id: 2
+                capacity: 4
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 取號成功！
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/reservations/remote:
+    post:
+      tags:
+        - 通用取號
+      summary: 提交遠端取號請求
+      description: |-
+        ### Description
+
+        用於遠端取號的客戶，提供分店代碼、用餐人數以及手機號碼，系統將發送驗證簡訊，預先檢查取號條件，確保後續簡訊驗證完成後方算取號成功。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Request Body
+
+        - `phone_number` (required): 客戶的手機號碼。
+        - `store_id` (required): 目標分店的唯一標識符。
+        - `capacity` (required): 選定的桌型容納人數。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                phone_number: '123456789'
+                store_id: 2
+                capacity: 4
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: pending_verification
+                message: 稍後您會收到驗證簡訊。
+                reservation_details:
+                  pending_token: abcd1234
+                  store_id: 2
+                  capacity: 4
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 目前非營業時間
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 手機號碼在黑名單中
+                phone_number: '123456789'
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/reservations/sms-verify:
+    post:
+      tags:
+        - 通用取號
+      summary: 遠端取號的簡訊驗證
+      description: >-
+        ### Description
+
+
+        此 API 用於遠端透過手機取號的使用者，驗證簡訊以完成取號操作。客戶需在 Header 中帶上之前預約成功時獲得的
+        `pending_token`，以及在 Body 中輸入收到的四碼驗證碼。
+
+
+        ### Authentication
+
+
+        不需要身份驗證。
+
+
+        ### Header
+
+
+        - `pending-token` (string): 先前預約成功時獲得的臨時令牌。
+            
+
+        ### Request Body
+
+
+        - `ping_code` (string): 收到的四碼驗證碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                pin_code: '1234'
+      parameters:
+        - name: pending-token
+          in: header
+          schema:
+            type: string
+          example: abcd1234
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 取號成功！
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 驗證碼錯誤
+                  value:
+                    status: error
+                    message: 驗證碼錯誤，請重新輸入。
+                example-1:
+                  summary: 驗證碼已過期
+                  value:
+                    status: error
+                    message: 驗證碼已過期，請重新請求驗證。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/reservations/{reservation_id}:
+    get:
+      tags:
+        - 通用取號
+      summary: 查看取號狀態
+      description: |-
+        ## Description
+
+        此 API 供客戶透過手機查看專屬的候位網址，以查詢目前的候位情況，包括自己的候位號碼、等待組數等資訊。因為在使用者手機使用，故無需登入驗證。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Parameters
+
+        - `reservation_id` (integer, required): 候位的唯一標識符。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `status` (string): 查詢的狀態。在這個情境中，值為 "success" 表示查詢成功。
+        - `message` (string): 提示訊息，用以告知客戶查詢狀態。
+        - `reservation_details` (object): 候位的詳細信息，包含以下屬性：
+            - `reservation_number` (string): 客戶的候位號碼。
+            - `store_id` (integer): 分店的唯一標識符。
+            - `capacity`(integer): 桌型的最大容納人數。
+            - `capacity_label` (string): 選擇桌型的友善閱讀名稱。
+            - `reservation_time` (string): 客戶取號的時間。
+            - `current_number` (integer): 目前叫號號碼。
+            - `waiting_count` (integer): 客戶目前等待人數。
+      parameters:
+        - name: reservation_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 預約成功
+                reservation_details:
+                  reservation_number: '4008'
+                  store_id: 2
+                  capacity: 4
+                  capacity_label: 3~4人
+                  reservation_time: '2024-03-08 18:30:00'
+                  current_number: 4003
+                  waiting_count: 4
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 未找到相應的候位資訊。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/waiting-list:
+    get:
+      tags:
+        - 現場管理
+      summary: 查看分店即時候位列表
+      description: |-
+        ### Description
+
+        用於查看候位列表(包括各桌型的等待情況)。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 分店的唯一標識符。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `waiting_list`: 包含各桌型的等待情況的陣列，每個桌型對象包含以下屬性：
+            - `table_type_id`: 桌子類型的唯一標識符。
+            - `table_name`: 桌子的友善閱讀名稱。
+            - `current_number`: 目前等待的號碼。
+            - `waiting_count`: 目前等待人數。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 查看成功！
+                waiting_list:
+                  - table_type_id: 1
+                    table_name: 1~2人
+                    current_number: 2001
+                    waiting_count: 2
+                  - table_type_id: 2
+                    table_name: 3~4人
+                    current_number: 4001
+                    waiting_count: 1
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/waiting-list/{reservation_id}/call:
+    post:
+      tags:
+        - 現場管理
+      summary: 叫號
+      description: |-
+        ### Description
+
+        此端點用於叫號，標記特定候位已被叫號。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有叫號權限的使用者執行。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 目標分店的唯一標識符。
+            
+        - `reservation_id` (integer, required): 候位的唯一標識符。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example: {}
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: reservation_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 候位已被叫號
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/waiting-list/{reservation_id}/status:
+    post:
+      tags:
+        - 現場管理
+      summary: 更新取號狀態
+      description: |-
+        ### Description
+
+        此端點用於更新特定候位的取號狀態，允許將客戶的取號狀態標記為 "in_service" 或 "absent"。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有叫號權限的使用者執行。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 目標分店的唯一標識符。
+        - `reservation_id` (integer, required): 候位的唯一標識符。
+            
+
+        ### Request Body
+
+        - `status`（required）：要更新的候位狀態。可能的值為 "in_service"（入座）或 "absent"（過號）
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                status: in_service
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: reservation_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 候位狀態已成功更新
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/register:
+    post:
+      tags:
+        - 帳號管理
+      summary: 註冊新用戶帳號(初始化管理員帳號)
+      description: |-
+        ### Description
+
+        用於特定場景下初始化管理員帳號的註冊功能。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Request Body
+
+        - `username` (string, required): 用戶名。
+        - `email` (string, required): 用戶電子郵件地址。
+        - `password` (string, required): 用戶密碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: admin
+                email: admin@example.com
+                password: secretpassword
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 使用者帳號新增成功
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/employee/register:
+    post:
+      tags:
+        - 帳號管理
+      summary: 為員工註冊帳戶
+      description: |-
+        ## Description
+
+        用於管理員為員工建立帳戶的註冊功能。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Request Body
+
+        - `username` (string, required): 員工用戶名。
+        - `email` (string, required): 員工電子郵件地址。
+        - `password` (string, required): 員工密碼。
+        - `role_id` (integer, required): 員工角色的唯一標識符。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: employee
+                email: employee@example.com
+                password: employeepassword
+                role_id: 2
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 員工新增成功
+                employee_id: 3
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/login:
+    post:
+      tags:
+        - 帳號管理
+      summary: 用戶登入
+      description: |-
+        ### Description
+
+        用於用戶登入的功能。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Request Body
+
+        - `username` (string, required): 用戶名。
+            
+        - `password` (string, required): 用戶密碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: your_username
+                password: your_password
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: User successfully logged in.
+                token: >-
+                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHBpcmVkX3N0YW5kYXJkX2Zyb20iOiIvIiwiaWF0IjoxNTE2MjM5MDIyfQ.XtJJdd0zvcVyNZPTpxz5j5wyr-iyKudtzkNbH0hTzPw
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 登入失敗，用戶名或密碼不正確
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/logout:
+    post:
+      tags:
+        - 帳號管理
+      summary: 用戶登出
+      description: |-
+        ### Description
+
+        用於用戶登出的功能。若是使用 JWT 實作，登出應該實作在前端，這個 API 實際沒作用。
+
+        ### Authentication
+
+        需要身份驗證。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example: {}
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: User successfully logged out.
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/password/forgot:
+    post:
+      tags:
+        - 帳號管理
+      summary: 忘記密碼
+      description: |-
+        ### Description
+
+        用於用戶忘記密碼時的功能。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Request Body
+
+        - `email` (string, required): 用戶電子郵件地址。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: user@example.com
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: Password reset email sent successfully.
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/accounts/password/reset:
+    post:
+      tags:
+        - 帳號管理
+      summary: 重設密碼
+      description: |-
+        ### Description
+
+        用於用戶重設密碼時的功能。
+
+        ### Authentication
+
+        不需要身份驗證。
+
+        ### Request Body
+
+        - `email` (string, required): 用戶電子郵件地址。
+        - `token` (string, required): 重設密碼的驗證令牌。
+        - `password` (string, required): 新密碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: user@example.com
+                token: reset_token
+                password: newpassword
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: Password successfully reset.
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 未經授權的請求，重設密碼驗證令牌無效。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/employees:
+    post:
+      tags:
+        - 員工管理
+      summary: 建立新員工
+      description: |-
+        ### Description
+
+        允許管理員建立新的員工。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Request Body
+
+        - `role_id` (integer, required): 新員工的角色 ID。
+        - `store_id` (integer, required): 新員工所屬店鋪的 ID。
+        - `username` (string, required): 新員工的用戶名。
+        - `first_name` (string, optional): 新員工的名字。
+        - `last_name` (string, optional): 新員工的姓氏。
+        - `password` (string, required): 新員工的密碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                role_id: 1
+                store_id: 2
+                username: john
+                first_name: John
+                last_name: ' Doe'
+                password: securepassword123
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 員工新增成功
+                employee_id: 3
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 員工管理
+      summary: 獲取所有員工列表
+      description: |-
+        ### Description
+
+        用於獲取所有員工的資訊列表。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `employees`: 包含所有員工的陣列，每個員工對象包含以下屬性：
+            - `id`: 員工的唯一標識符。
+            - `username`: 員工的使用者名稱。
+            - `first_name`: 員工的名字。
+            - `last_name`: 員工的姓氏。
+            - `role_id`: 員工角色的唯一標識符。
+            - `store_id`: 員工所屬店鋪的唯一標識符。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                employees:
+                  - id: 1
+                    username: john
+                    first_name: John
+                    last_name: Doe
+                    role_id: Manager
+                    store_id: 2
+                  - id: 2
+                    username: jane
+                    first_name: Jane
+                    last_name: Smith
+                    role_id: Staff
+                    store_id: 3
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/employees/{employee_id}:
+    get:
+      tags:
+        - 員工管理
+      summary: 獲取特定員工資料
+      description: |-
+        ### Description
+
+        用於獲取特定員工的資訊。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Parameters
+
+        - `employee_id` (integer, required): 要獲取資訊的員工的唯一標識符。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `username`: 員工的使用者名稱。
+        - `first_name`: 員工的名字。
+        - `last_name`: 員工的姓氏。
+        - `role_id`: 員工角色的唯一標識符。
+        - `store_id`: 員工所屬店鋪的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: employee_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                username: john
+                first_name: John
+                last_name: Doe
+                role_id: 3
+                store_id: 2
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    put:
+      tags:
+        - 員工管理
+      summary: 更新員工資訊
+      description: |-
+        ### Description
+
+        用於更新特定員工的資訊。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Parameters
+
+        - `employee_id` (integer, required): 要獲取資訊的員工的唯一標識符。
+            
+
+        ### Request Body
+
+        可包含以下任一或多個屬性：
+
+        - `role_id` (integer, optional): 新員工的角色 ID。
+        - `store_id` (integer, optional): 新員工所屬店鋪的 ID。
+        - `username` (string, optional): 新員工的用戶名。
+        - `first_name` (string, optional): 新員工的名字。
+        - `last_name` (string, optional): 新員工的姓氏。
+        - `password` (string, optional): 新員工的密碼。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含更新後的員工的詳細資訊。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                first_name: Updated First Name
+                last_name: Updated Last Name
+                role_id: 2
+                store_id: 3
+                username: updated_username
+                password: updated_password
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: employee_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                first_name: Updated First Name
+                last_name: Updated Last Name
+                role_id: 2
+                store_id: 3
+                username: updated_username
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 員工管理
+      summary: 刪除員工
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的員工。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Parameters
+
+        - `employee_id` (integer, required): 要獲取資訊的員工的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: employee_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 員工資料已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/roles:
+    post:
+      tags:
+        - 角色權限管理
+      summary: 建立角色資訊
+      description: |-
+        ### Description
+
+        允許管理員建立新角色。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Request Body
+
+        - `name` (string, required): 角色名稱。
+        - `description` (string): 角色描述。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Admin
+                description: System administrator with full access.
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 1
+                name: Admin
+                description: System administrator with full access.
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 角色權限管理
+      summary: 獲取所有角色資訊列表
+      description: |-
+        ### Description
+
+        用於獲取所有角色的資訊列表。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `customers`: 包含所有客戶的陣列，每個客戶對象包含以下屬性：
+            - `id`: 角色的唯一標識符。
+            - `name`: 角色的名稱。
+            - `description`:角色的描述。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - id: 1
+                  name: IT
+                  description: System administrator with full access.
+                - id: 2
+                  name: Waiter
+                  description: 具有叫號權限的前台服務人員。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/roles/{role_id}:
+    put:
+      tags:
+        - 角色權限管理
+      summary: 更新角色資訊
+      description: |-
+        ### Description
+
+        用於更新特定角色的資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `role_id` (integer, required): 欲更新的角色的唯一標識符。
+            
+
+        #### Request Body
+
+        - `name` (string, optional): 新的角色名稱。
+            
+        - `description` (string, optional): 新的角色描述。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Super Admin
+                description: High-level administrator with superpowers.
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: role_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 1
+                name: Super Admin
+                description: High-level administrator with superpowers.
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 角色權限管理
+      summary: 刪除角色資訊
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的角色。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `role_id` (integer, required): 要刪除的角色的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: role_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 角色資料已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/permissions:
+    post:
+      tags:
+        - 角色權限管理
+      summary: 建立權限
+      description: |-
+        ### Description
+
+        允許管理員建立新權限。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Request Body
+
+        - `name` (string, required): 權限名稱。
+            
+        - `description` (string): 權限描述。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: 管理工作日誌
+                description: Permission Description
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 1
+                name: 管理工作日誌
+                description: Permission Description
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 角色權限管理
+      summary: 獲取所有權限列表
+      description: |-
+        ### Description
+
+        用於獲取所有權限的資訊列表。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `customers`: 包含所有客戶的陣列，每個客戶對象包含以下屬性：
+            
+            - `id`: 權限的唯一標識符。
+                
+            - `name`: 權限的名稱。
+                
+            - `description`:權限的描述。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - id: 123
+                  name: Permission Name
+                  description: Permission Description
+                - id: 456
+                  name: Another Permission
+                  description: Another Permission Description
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/permissions/{permission_id}:
+    put:
+      tags:
+        - 角色權限管理
+      summary: 更新權限資訊
+      description: |-
+        ### Description
+
+        用於更新特定權限的資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `permission_id` (integer, required): 欲更新的權限的唯一標識符。
+            
+
+        #### Request Body
+
+        - `name` (string, optional): 新的權限名稱。
+            
+        - `description` (string, optional): 新的權限描述。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Updated Permission Name
+                description: Updated Permission Description
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: permission_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 123
+                name: Updated Permission Name
+                description: Updated Permission Description
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 角色權限管理
+      summary: 刪除權限資訊
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的權限。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Parameters
+
+        - `permission_id` (integer, required): 要刪除的權限的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: permission_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 權限資料已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/roles/{role_id}/permissions:
+    post:
+      tags:
+        - 角色權限管理
+      summary: 幫角色分配權限
+      description: |-
+        ### Description
+
+        此 API 用於為特定角色分配一個或多個權限。只有經過身份驗證的用戶才能執行此操作。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Parameters
+
+        - `role_id` (integer, required): 目標角色的唯一標識符。
+            
+
+        ### Request Body
+
+        - `permissions`（required): 欲分配給角色的一個或多個權限的唯一標識符列表
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                permissions:
+                  - 2
+                  - 3
+                  - 4
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: role_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 權限分配成功。
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 角色權限管理
+      summary: 查看角色的權限
+      description: |-
+        ### Description
+
+        此 API 用於查看指定角色所擁有的所有權限。只有經過身份驗證的用戶才能執行此操作。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `role_id` (integer, required): 要獲取資訊的目標角色的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: role_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                permissions:
+                  - permission_id: 2
+                    name: 編輯黑名單
+                  - permission_id: 3
+                    name: 刪除黑名單
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/roles/{role_id}/permissions/{permission_id}:
+    delete:
+      tags:
+        - 角色權限管理
+      summary: 從角色中移除權限
+      description: |-
+        ### Description
+
+        允許管理員從指定角色中移除特定權限。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Parameters
+
+        - `role_id` (integer, required): 目標角色的唯一標識符。
+        - `permission_id` (integer, required): 要刪除的權限的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: role_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: permission_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 權限移除成功
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/customers:
+    post:
+      tags:
+        - 客戶資訊管理
+      summary: 建立新客戶
+      description: |-
+        ### Description
+
+        允許管理員建立新客戶資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Request Body
+
+        - `name` (required): 客戶姓名。
+            
+        - `phone_number` (required): 客戶手機號碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: John Doe
+                phone_number: '123456789'
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 客戶新增成功
+                customer_id: 3
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 客戶資訊管理
+      summary: 獲取所有客戶列表
+      description: |-
+        ### Description
+
+        用於獲取所有客戶的資訊列表。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `customers`: 包含所有客戶的陣列，每個客戶對象包含以下屬性：
+            - `id`: 客戶的唯一標識符。
+            - `name`: 客戶的姓名。
+            - `phone_number`: 客戶的手機號碼。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                customers:
+                  - id: 1
+                    name: John Doe
+                    phone_number: '123456789'
+                  - id: 2
+                    name: Jane Smith
+                    phone_number: '987654321'
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/customers/{customer_id}:
+    get:
+      tags:
+        - 客戶資訊管理
+      summary: 獲取特定客戶資訊
+      description: |-
+        ### Description
+
+        用於獲取特定客戶的詳細資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `customer_id` (integer, required): 要獲取資訊的客戶的唯一標識符。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `customer_id`: 客戶的唯一標識符。
+            
+        - `name`: 客戶的姓名。
+            
+        - `phone_number`: 客戶的手機號碼。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: customer_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                customer_id: 1
+                name: John Doe
+                phone_number: '123456789'
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    put:
+      tags:
+        - 客戶資訊管理
+      summary: 更新客戶資訊
+      description: |-
+        ### Description
+
+        用於更新特定客戶的資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `customer_id` (integer, required): 欲更新的客戶的唯一標識符。
+            
+
+        ### Request Body
+
+        - `name` (string, optional): 客戶的新姓名。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: John Smith
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: customer_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                name: John Smith
+                phone_number: '987654321'
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 客戶資訊管理
+      summary: 刪除客戶
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的客戶。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `customer_id` (integer, required): 要刪除的客戶的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: customer_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 顧客資料已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/blacklists:
+    get:
+      tags:
+        - 黑名單管理
+      summary: 查看系統黑名單
+      description: |-
+        ### Description
+
+        用於查看系統中所有被列入黑名單的顧客。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `blacklists`: 包含所有黑名單項目的陣列，每個黑名單項目對象包含以下屬性：
+            
+            - `id`: 黑名單項目的唯一標識符。
+                
+            - `customer_name`: 顧客姓名。
+            - `phone_number`: 顧客電話號碼。
+            - `updated_at`: 加入黑名單的日期和時間。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                blacklists:
+                  - id: 1
+                    customer_name: John Doe
+                    phone_number: '123456789'
+                    updated_at: '2024-03-11T08:00:00Z'
+                  - id: 2
+                    customer_name: Jane Smith
+                    phone_number: '987654321'
+                    updated_at: '2024-03-10T10:30:00Z'
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    post:
+      tags:
+        - 黑名單管理
+      summary: 將顧客加入黑名單
+      description: |-
+        ### Description
+
+        允許管理員將顧客加入黑名單。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Request Body
+
+        - `customer_name` (optional): 客戶的名稱。
+        - `phone_number` (required): 電話號碼。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                customer_name: John Doe
+                phone_number: '123456789'
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 黑名單新增成功
+                blacklist_id: 3
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 未經授權的請求
+                  value:
+                    status: Unauthorized
+                    message: 身份驗證失敗，請提供有效的身份憑證。
+                example-1:
+                  summary: 權限不足禁止訪問
+                  value:
+                    status: Forbidden
+                    message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/blacklists/{blacklist_id}:
+    delete:
+      tags:
+        - 黑名單管理
+      summary: 從黑名單中移除顧客
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的黑名單。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `blacklist_id` (required): 要刪除的黑名單的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: blacklist_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 黑名單已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores:
+    post:
+      tags:
+        - 店鋪管理
+      summary: 建立新分店
+      description: |-
+        ### Description
+
+        允許管理員新增一家分店的資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Request Body
+
+        - `name` (required): 分店的名稱。
+        - `address` (required): 分店的地址。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Branch C
+                address: 789 Another St, Newtown, Anycountry
+      security:
+        - jwtAuth: []
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 分店新增成功
+                store_id: 3
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 店鋪管理
+      summary: 查看所有分店資訊
+      description: |-
+        ### Description
+
+        用於獲取所有分店的詳細資訊。此 API 能讓管理員快速獲得分店的基本資料。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        無需額外參數。
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `stores`: 包含所有分店的陣列，每個分店對象包含以下屬性：
+            
+            - `id`: 分店的唯一標識符。
+                
+            - `name`: 分店的名稱。
+            - `address`: 分店的地址。
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                stores:
+                  - id: 1
+                    name: Branch A
+                    address: 123 Main St, Anytown, Anycountry
+                  - id: 2
+                    name: Branch B
+                    address: 456 Secondary St, Othertown, Anycountry
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}:
+    put:
+      tags:
+        - 店鋪管理
+      summary: 更新分店資訊
+      description: |-
+        ### Description
+
+        更新指定分店的詳細資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 欲更新的分店的唯一標識符。
+            
+
+        ### Request Body
+
+        可包含以下任一或多個屬性：
+
+        - `name` (string): 分店的名稱。
+        - `address` (string): 分店的位置。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含更新後的分店的詳細資訊。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: Branch C Updated
+                address: 789 Another St, Renewtown, Anycountry
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 分店資訊更新成功
+                name: Branch C
+                address: 789 Another St, Newtown, Anycountry
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 店鋪管理
+      summary: 刪除分店
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的分店。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### Parameters
+
+        - `store_id` (required): 要刪除的分店的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 分店已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/reservations/daily:
+    get:
+      tags:
+        - 店鋪管理
+      summary: 查看分店每日取號記錄
+      description: >-
+        ### Description
+
+
+        用於獲取特定分店在指定日期的所有取號記錄，支援分頁功能。它提供了每個預約的詳細資訊，包括取號時間、按桌型大小分類的取號時等待的組數、實際就座時間和未到狀態。
+
+
+        ### Authentication
+
+
+        需要身份驗證。
+
+
+        ### Parameters
+
+
+        - `store_id` (integer, required): 分店的唯一標識符。
+            
+
+        ### Query Parameters
+
+
+        - `date` (optional): 查詢的日期，格式為 `YYYY-MM-DD` ，如果未提供，預設使用當天。
+
+        - `limit` (optional): 每頁返回的紀錄數。
+
+        - `offset` (optional): 跳過紀錄的數量，用於定位特定頁的資料。
+            
+
+        ### Response
+
+
+        返回一個 JSON 對象，包含預約記錄的陣列和分頁資訊。每個預約包括：
+
+
+        - reservation_id：預約的唯一識別碼。
+
+        - phone_number：與預約相關聯的客戶電話號碼。
+
+        - reservation_time：預約的時間戳。
+
+        - waiting_count：預約時前面等待的組數，按桌型大小分類。
+
+        - arrival_time：客人就座的時間戳。
+
+        - status：預約狀態，表示預約是已完成或未到。
+
+        - table_type：桌型資訊，包括容量和標籤。
+
+        - 分頁資訊，例如 total_records、current_page 和 total_pages。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                store_id: 2
+                reservations:
+                  - reservation_id: 101
+                    phone_number: '123456789'
+                    waiting_count: 2
+                    reservation_time: '2024-03-12T10:00:00Z'
+                    arrival_time: '2024-03-12T10:30:00Z'
+                    status: in_service
+                    table_type:
+                      capacity: 4
+                      label: 3-4人
+                  - reservation_id: 102
+                    phone_number: '987654321'
+                    waiting_count: 5
+                    reservation_time: '2024-03-12T11:00:00Z'
+                    arrival_time: '2024-03-12T11:05:00Z'
+                    status: waiting
+                    table_type:
+                      capacity: 8
+                      label: 5人以上
+                  - reservation_id: 103
+                    phone_number: '0912345678'
+                    waiting_count: 30
+                    reservation_time: '2024-03-12T12:00:00Z'
+                    status: absent
+                    table_type:
+                      capacity: 2
+                      label: 1-2人
+                paging:
+                  limit: 10
+                  offset: 0
+                  total_records: 150
+                  current_page: 1
+                  total_pages: 15
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/table-types:
+    post:
+      tags:
+        - 桌型管理
+      summary: 建立新桌型
+      description: |-
+        #### Description
+
+        允許管理員新增一種新的桌型。
+
+        #### Authentication
+
+        需要身份驗證。
+
+        #### **Request Body:**
+
+        - `name` (string, required): 新桌型的名稱。
+            
+        - `capacity` (integer, required): 新桌型的容納人數。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: 5~8人桌
+                capacity: 8
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 桌型新增成功
+                table_type_id: 4
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 桌型管理
+      summary: 獲取所有桌型列表
+      description: |-
+        #### Description
+
+        用於查看所有可用的桌型列表。
+
+        #### Authentication
+
+        需要身份驗證。
+
+        #### Parameters
+
+        無需額外參數。
+
+        #### Response
+
+        返回 JSON 對象，包含所有桌型的列表
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `stores`: 包含所有分店的陣列，每個分店對象包含以下屬性：
+            
+            - `id` 桌型的唯一標識符。
+                
+            - `name` 桌型的名稱。
+                
+            - `capacity`桌型的容納人數。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                table_types:
+                  - id: 1
+                    name: 1~2人桌
+                    capacity: 2
+                  - id: 2
+                    name: 3~4人桌
+                    capacity: 4
+                  - id: 3
+                    name: 5人以上桌
+                    capacity: 8
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/table-types/{table_type_id}:
+    put:
+      tags:
+        - 桌型管理
+      summary: 更新桌型
+      description: |-
+        ## Description
+
+        更新指定分店的詳細資訊。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### URL Parameters
+
+        - `store_id` (integer, required): 欲更新的分店的唯一標識符。
+        - `table_type_id` (integer, required): 欲更新的桌型的唯一標識符。
+            
+
+        ### Request Body
+
+        可包含以下任一或多個屬性：
+
+        - `name` (string): 更新後的桌型名稱。
+        - `capacity` (integer): 更新後的桌型容納人數。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含更新後的分店的詳細資訊。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: 2~4人桌
+                capacity: 4
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: table_type_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                name: 2~4人桌
+                capacity: 4
+                table_type_id: 4
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 桌型管理
+      summary: 刪除桌型
+      description: |-
+        ### Description
+
+        允許管理員刪除指定的桌型。
+
+        ### Authentication
+
+        需要身份驗證。
+
+        ### **Parameters:**
+
+        - `store_id` (required): 要刪除的分店的唯一標識符。
+            
+        - `table_type_id` (integer, required): 欲刪除的桌型的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: table_type_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 桌型已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/operating-days:
+    post:
+      tags:
+        - 營業時間管理
+      summary: 設定分店的營業日和時段
+      description: |-
+        ### Description
+
+        此 API 用於設定分店的營業日和時段，需要進行身份驗證。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Request Body
+
+        - `store_id` (path variable, required): 分店的唯一標識符。
+        - `operating_days` (array, required): 包含一個或多個營業日的物件，每個物件包含以下欄位：
+            - `day_of_week` (integer, required): 表示星期幾的數字，星期一為 1，星期日為 7。
+            - `periods` (array, required): 包含一個或多個時段的陣列，每個時段物件包含：
+                - `start_time` (string, required): 營業開始時間，格式為 "HH:MM"。
+                - `end_time` (string, required): 營業結束時間，格式為 "HH:MM"。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                operating_days:
+                  - day_of_week: 1
+                    periods:
+                      - start_time: '12:00'
+                        end_time: '14:00'
+                      - start_time: '18:00'
+                        end_time: '22:00'
+                  - day_of_week: 2
+                    periods:
+                      - start_time: '12:00'
+                        end_time: '14:00'
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '201':
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 營業時間設定成功。
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 你沒有足夠的權限執行這個動作。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    get:
+      tags:
+        - 營業時間管理
+      summary: 查看分店的營業日和時段
+      description: >-
+        ### Description
+
+
+        此 API 用於查看指定分店的營業日和時段，需要進行身份驗證。
+
+
+        ### Authentication
+
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+
+        ### Parameters
+
+
+        - `store_id` (path variable, required): 分店的唯一標識符。
+            
+
+        ### Response
+
+
+        返回 JSON 對象，包含以下屬性：
+
+
+        - `status`: 請求的狀態，例如 "success"。
+
+        - `data`: 包含 `store_id` 和 `operating_days` 的物件。`operating_days`
+        是一個陣列，每個元素包含：
+            - `day_of_week`: 表示營業日星期幾的數字，星期一為 1，星期日為 7。
+            - `periods`: 包含該天營業時段的陣列，每個時段包括：
+                - `start_time`: 營業開始時間，格式為 "HH:MM"。
+                - `end_time`: 營業結束時間，格式為 "HH:MM"。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                data:
+                  store_id: 1
+                  operating_days:
+                    - day_of_week: 1
+                      periods:
+                        - start_time: '12:00'
+                          end_time: '14:00'
+                        - start_time: '18:00'
+                          end_time: '22:00'
+                    - day_of_week: 2
+                      periods:
+                        - start_time: '12:00'
+                          end_time: '14:00'
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/operating-days/{operating_days_id}:
+    put:
+      tags:
+        - 營業時間管理
+      summary: 更新分店的營業日和時段設定
+      description: |-
+        ### Description
+
+        此 API 用於更新指定分店的某個營業日和時段設定。這需要進行身份驗證，並且操作應該由具有管理員權限的使用者執行。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Parameters
+
+        - `store_id` (path variable, required): 分店的唯一標識符。
+            
+        - `operating_days_id` (path variable, required): 特定營業日和時段設定的唯一標識符。
+            
+
+        ### Request Body
+
+        - `day_of_week` (integer, required): 更新後的星期幾，星期一為 1，星期日為 7。
+        - `periods` (array, required): 包含一個或多個時段的陣列，每個時段物件包含：
+            - `start_time` (string, required): 更新後的營業開始時間，格式為 "HH:MM"。
+            - `end_time` (string, required): 更新後的營業結束時間，格式為 "HH:MM"。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                day_of_week: 3
+                periods:
+                  - start_time: '13:00'
+                    end_time: '17:00'
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: operating_days_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 營業時間更新成功。
+                data:
+                  operating_days_id: 123
+                  store_id: 1
+                  day_of_week: 3
+                  periods:
+                    - start_time: '13:00'
+                      end_time: '17:00'
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+    delete:
+      tags:
+        - 營業時間管理
+      summary: 刪除分店的營業日和時段設定
+      description: |-
+        ### Description
+
+        此 API 用於刪除指定分店的某個營業日和時段設定。需要進行身份驗證，並且操作應由具有管理員權限的使用者執行。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行。
+
+        ### Parameters
+
+        - `store_id` (path variable, required): 分店的唯一標識符。
+            
+        - `operating_days_id` (path variable, required): 特定營業日和時段設定的唯一標識符。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+        - name: operating_days_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: success
+                message: 營業日和時段設定已成功刪除
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/stats/hourly:
+    get:
+      tags:
+        - 統計信息
+      summary: 查看每小時統計
+      description: |-
+        ### Description
+
+        此 API 用於查看特定分店在指定日期範圍內的每小時統計資訊，包括客戶取號量、等待時間等數據。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 目標分店的唯一標識符。
+            
+
+        ### Query Parameters
+
+        - `date` (required): 查詢的日期，格式為 `YYYY-MM-DD`。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `date`: 統計日期，格式為 `YYYY-MM-DD`。
+        - `hourly_stats`: 包含每小時統計數據的陣列，每個元素對象包含以下屬性：
+            - `hour`: 小時數，24 小時制。
+            - `reservation_count`: 該小時的取號量。
+            - `average_waiting_time`: 該小時的平均等待時間（以分鐘為單位）。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+          description: 指定日期
+          example: '2024-03-01'
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                hourly_stats:
+                  - hour: 0
+                    reservation_count: 12
+                    average_waiting_time: 10
+                  - hour: 1
+                    reservation_count: 5
+                    average_waiting_time: 5
+                  - hour: 2
+                    reservation_count: 2
+                    average_waiting_time: 2
+                  - hour: 3
+                    reservation_count: 0
+                    average_waiting_time: 0
+                  - hour: 4
+                    reservation_count: 0
+                    average_waiting_time: 0
+                  - hour: 5
+                    reservation_count: 0
+                    average_waiting_time: 0
+                  - hour: 6
+                    reservation_count: 3
+                    average_waiting_time: 3
+                  - hour: 7
+                    reservation_count: 8
+                    average_waiting_time: 8
+                  - hour: 8
+                    reservation_count: 15
+                    average_waiting_time: 15
+                  - hour: 9
+                    reservation_count: 20
+                    average_waiting_time: 20
+                  - hour: 10
+                    reservation_count: 25
+                    average_waiting_time: 15
+                  - hour: 11
+                    reservation_count: 30
+                    average_waiting_time: 18
+                  - hour: 12
+                    reservation_count: 35
+                    average_waiting_time: 21
+                  - hour: 13
+                    reservation_count: 40
+                    average_waiting_time: 24
+                  - hour: 14
+                    reservation_count: 45
+                    average_waiting_time: 27
+                  - hour: 15
+                    reservation_count: 50
+                    average_waiting_time: 30
+                  - hour: 16
+                    reservation_count: 45
+                    average_waiting_time: 27
+                  - hour: 17
+                    reservation_count: 40
+                    average_waiting_time: 24
+                  - hour: 18
+                    reservation_count: 35
+                    average_waiting_time: 21
+                  - hour: 19
+                    reservation_count: 30
+                    average_waiting_time: 18
+                  - hour: 20
+                    reservation_count: 25
+                    average_waiting_time: 15
+                  - hour: 21
+                    reservation_count: 20
+                    average_waiting_time: 20
+                  - hour: 22
+                    reservation_count: 15
+                    average_waiting_time: 15
+                  - hour: 23
+                    reservation_count: 10
+                    average_waiting_time: 10
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/{store_id}/stats/daily:
+    get:
+      tags:
+        - 統計信息
+      summary: 查看每日統計
+      description: |-
+        ### Description
+
+        此 API 用於查看指定日期範圍內的每日統計資訊，包括客戶取號量、等待時間等數據。
+
+        ### Parameters
+
+        - `store_id` (integer, required): 目標分店的唯一標識符。
+            
+
+        ### Query Parameters
+
+        - `start_date` (required): 查詢的開始日期，格式為 `YYYY-MM-DD`。
+        - `end_date` (required): 查詢的結束日期，格式為 `YYYY-MM-DD`。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含以下屬性：
+
+        - `daily_stats`: 包含每日統計數據的陣列，每個元素對象包含以下屬性：
+            - `date`: 日期，格式為 `YYYY-MM-DD`。
+            - `reservation_count`: 當日的取號量。
+            - `average_waiting_time`: 當日的平均等待時間（以分鐘為單位）。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+          description: 起始日期
+          example: '2024-03-01'
+        - name: end_date
+          in: query
+          schema:
+            type: string
+          description: 結束日期
+          example: '2024-03-15'
+        - name: store_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                daily_stats:
+                  - date: '2024-03-10'
+                    reservation_count: 150
+                    average_waiting_time: 20
+                  - date: '2024-03-11'
+                    reservation_count: 180
+                    average_waiting_time: 18
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/stats/hourly:
+    get:
+      tags:
+        - 統計信息
+      summary: 查看所有分店每小時統計
+      description: |-
+        ### Description
+
+        此 API 用於查看所有分店在指定日期的每小時統計資訊，包括客戶取號量、平均等待時間等數據。
+
+        ### Query Parameters
+
+        - `date` (required): 查詢的日期，格式為 `YYYY-MM-DD`。
+            
+
+        ### Response
+
+        返回 JSON 陣列，每個元素對象表示一個分店的統計數據，包含以下屬性：
+
+        - `store_id`: 分店的唯一標識符。
+        - `store_name`: 分店的名稱。
+        - `hourly_stats`: 包含指定日期的每小時統計數據的陣列，每個元素對象包含以下屬性：
+            - `hour`: 時間，24 小時制。
+            - `reservation_count`: 該小時的取號量。
+            - `average_waiting_time`: 該小時的平均等待時間（以分鐘為單位）。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+          example: '2024-03-01'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - id: 1
+                  name: Store A
+                  hourly_stats:
+                    - hour: 0
+                      reservation_count: 25
+                      average_waiting_time: 15
+                    - hour: 1
+                      reservation_count: 30
+                      average_waiting_time: 18
+                - id: 2
+                  name: Store B
+                  hourly_stats:
+                    - hour: 0
+                      reservation_count: 20
+                      average_waiting_time: 10
+                    - hour: 1
+                      reservation_count: 35
+                      average_waiting_time: 20
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/stores/stats/daily:
+    get:
+      tags:
+        - 統計信息
+      summary: 查看所有分店每日統計
+      description: |-
+        ### Description
+
+        此 API 用於查看所有分店每日的統計資訊，包括客戶取號量、平均等待時間等數據。
+
+        ### Query Parameters
+
+        - `start_date` (required): 查詢的開始日期，格式為 `YYYY-MM-DD`。
+        - `end_date` (required): 查詢的結束日期，格式為 `YYYY-MM-DD`。
+            
+
+        ### Response
+
+        返回 JSON 陣列，每個元素對象表示一個日期的統計數據，包含以下屬性：
+
+        - `date`: 日期，格式為 `YYYY-MM-DD`。
+        - `daily_stats`: 包含指定日期的每日統計數據的陣列，每個元素對象包含以下屬性：
+            - `store_id`: 分店的唯一標識符。
+            - `store_name`: 分店的名稱。
+            - `reservation_count`: 當日的取號量。
+            - `average_waiting_time`: 當日的平均等待時間（以分鐘為單位）。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+          description: 起始日期
+          example: '2024-03-01'
+        - name: end_date
+          in: query
+          schema:
+            type: string
+          description: 結束日期
+          example: '2024-03-03'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - date: '2024-03-01'
+                  daily_stats:
+                    - id: 1
+                      name: Store A
+                      reservation_count: 250
+                      average_waiting_time: 20
+                    - id: 2
+                      name: Store B
+                      reservation_count: 300
+                      average_waiting_time: 25
+                - date: '2024-03-02'
+                  daily_stats:
+                    - id: 1
+                      name: Store A
+                      reservation_count: 280
+                      average_waiting_time: 22
+                    - id: 2
+                      name: Store B
+                      reservation_count: 320
+                      average_waiting_time: 28
+                - date: '2024-03-03'
+                  daily_stats:
+                    - id: 1
+                      name: Store A
+                      reservation_count: 270
+                      average_waiting_time: 18
+                    - id: 2
+                      name: Store B
+                      reservation_count: 310
+                      average_waiting_time: 23
+        '400':
+          description: Bad Request
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: error
+                message: 請求格式錯誤或缺少必要的參數。
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
