@@ -9,9 +9,7 @@ components:
   securitySchemes:
     jwtAuth:
       type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: 'A JWT token is required to access this API...'
+      scheme: jwt
 tags:
   - name: 通用取號
   - name: 現場管理
@@ -20,7 +18,7 @@ tags:
   - name: 角色權限管理
   - name: 客戶資訊管理
   - name: 黑名單管理
-  - name: 店鋪管理
+  - name: 店舖管理
   - name: 桌型管理
   - name: 營業時間管理
   - name: 統計資訊
@@ -3892,7 +3890,7 @@ paths:
   /v1/stores:
     post:
       tags:
-        - 店鋪管理
+        - 店舖管理
       summary: 建立新分店
       description: |-
         ### Description
@@ -3991,7 +3989,7 @@ paths:
                 message: 伺服器中發生意外錯誤。
     get:
       tags:
-        - 店鋪管理
+        - 店舖管理
       summary: 查看所有分店資訊
       description: |-
         ### Description
@@ -4069,7 +4067,7 @@ paths:
   /v1/stores/{store_id}:
     put:
       tags:
-        - 店鋪管理
+        - 店舖管理
       summary: 更新分店資訊
       description: |-
         ### Description
@@ -4201,7 +4199,7 @@ paths:
                 message: 伺服器中發生意外錯誤。
     delete:
       tags:
-        - 店鋪管理
+        - 店舖管理
       summary: 刪除分店
       description: |-
         ### Description
@@ -4297,7 +4295,7 @@ paths:
   /v1/stores/{store_id}/reservations/daily:
     get:
       tags:
-        - 店鋪管理
+        - 店舖管理
       summary: 查看分店每日取號記錄
       description: >-
         ### Description
