@@ -9,9 +9,7 @@ components:
   securitySchemes:
     jwtAuth:
       type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: "A JWT token is required to access this API..."
+      scheme: jwt
 tags:
   - name: 通用取號
   - name: 現場管理
@@ -1965,6 +1963,145 @@ paths:
               example:
                 status: Not Found
                 message: 未找到請求的資源。
+        '500':
+          description: Internal Server Error
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Internal Server Error
+                message: 伺服器中發生意外錯誤。
+  /v1/employees/login-records:
+    get:
+      tags:
+        - 員工管理
+      summary: 查詢員工登入記錄
+      description: |-
+        ### Description
+
+        允許管理員查詢所有員工的登入記錄。這包括登入時間、IP 地址、用戶代理資訊、登入狀態（成功或失敗），以及登入失敗的原因（如果有）。
+
+        ### Authentication
+
+        需要身份驗證。這個操作應該由具有管理員權限的使用者執行
+
+        ### Parameters
+
+        支援以下查詢參數來篩選記錄：
+
+        - `employee_id` (optional): 指定員工的唯一標識符。
+            
+        - `start_date` (optional): 查詢時間範圍的開始日期。
+            
+        - `end_date` (optional): 查詢時間範圍的結束日期。
+            
+
+        ### Response
+
+        返回 JSON 對象，包含匹配查詢條件的登入記錄列表。每個記錄包含以下屬性：
+
+        - `login_time`: 登入時間。
+            
+        - `ip_address`: IP 地址。
+            
+        - `user_agent`: 用戶代理資訊。
+            
+        - `status`: 登入狀態（`success` 或 `failed`）。
+            
+        - `reason`: 登入失敗的原因（如果 `status` 是 `failed`）。
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: employee_id
+          in: query
+          schema:
+            type: integer
+          description: 員工的唯一標識符
+          example: '5'
+        - name: start_date
+          in: query
+          schema:
+            type: string
+          description: 起始日期
+          example: '2024-03-01'
+        - name: end_date
+          in: query
+          schema:
+            type: string
+          description: 結束日期
+          example: '2024-03-15'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                records:
+                  - login_time: '2024-03-01T08:00:00Z'
+                    ip_address: 192.168.1.1
+                    user_agent: Mozilla/5.0...
+                    status: success
+                    reason: null
+                  - login_time: '2024-03-02T09:30:00Z'
+                    ip_address: 192.168.1.2
+                    user_agent: Mozilla/5.0...
+                    status: failed
+                    reason: Incorrect password
+        '401':
+          description: Unauthorized
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Unauthorized
+                message: 身份驗證失敗，請提供有效的身份憑證。
+        '403':
+          description: Forbidden
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Forbidden
+                message: 禁止訪問，該操作需要具有管理員權限的用戶。
+        '404':
+          description: Not Found
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: Not Found
+                message: 資源未找到。
         '500':
           description: Internal Server Error
           headers:
@@ -5786,6 +5923,7 @@ paths:
           in: query
           schema:
             type: string
+          description: 指定日期
           example: '2024-03-01'
       responses:
         '200':
