@@ -1,18 +1,26 @@
 name: Update Swagger UI
 on:
-  schedule:
-    - cron: '0 10 * * *'
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   updateSwagger:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.before }}
       - name: Get Latest Swagger UI Release
         id: swagger-ui
         run: |
           release_tag=$(curl -sL https://api.github.com/repos/swagger-api/swagger-ui/releases/latest | jq -r ".tag_name")
+          if [ -z "$release_tag" ]; then
+            echo "Failed to fetch the latest release tag." >&2
+            exit 1
+          fi
           echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
           current_tag=$(<swagger-ui.version)
           echo "current_tag=$current_tag" >> $GITHUB_OUTPUT
@@ -26,6 +34,10 @@ jobs:
           rm -fr dist index.html
           # Download the release
           curl -sL -o $RELEASE_TAG https://api.github.com/repos/swagger-api/swagger-ui/tarball/$RELEASE_TAG
+          if [ ! -f "$RELEASE_TAG" ]; then
+            echo "Failed to download the release." >&2
+            exit 1
+          fi
           # Extract the dist directory
           tar -xzf $RELEASE_TAG --strip-components=1 $(tar -tzf $RELEASE_TAG | head -1 | cut -f1 -d"/")/dist
           rm $RELEASE_TAG
@@ -52,3 +64,4 @@ jobs:
             [2]: https://github.com/peter-evans/create-pull-request
           labels: dependencies, automated pr
           branch: swagger-ui-updates
+          base: main # Specify the base branch explicitly
